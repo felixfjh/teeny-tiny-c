@@ -53,15 +53,16 @@ void skip_comment(lexer_t *lx)
 
 enum kind_e check_keyword(const char *str)
 {
+
 	if (strncmp(str, "LABEL", 5) == 0)			{	return LABEL;		}
 	else if (strncmp(str, "GOTO", 4) == 0)		{	return GOTO;		}
-	else if (strncmp(str, "PRINT", 5) == 0) 	{	return PRINT;		}
-	else if (strncmp(str, "INPUT", 5) == 0) 	{	return INPUT;		}
-	else if (strncmp(str, "LET", 3) == 0)	  	{	return LET;			}
+	else if (strncmp(str, "PRINT", 5) == 0)		{	return PRINT;		}
+	else if (strncmp(str, "INPUT", 5) == 0)		{	return INPUT;		}
+	else if (strncmp(str, "LET", 3) == 0)		{	return LET;			}
 	else if (strncmp(str, "IF", 2) == 0)		{	return IF;			}
-	else if (strncmp(str, "THEN", 4) == 0)	  	{	return THEN;		}
-	else if (strncmp(str, "ENDIF", 5) == 0)	  	{	return ENDIF;		}
-	else if (strncmp(str, "WHILE", 5) == 0) 	{	return WHILE;		}
+	else if (strncmp(str, "THEN", 4) == 0)		{	return THEN;		}
+	else if (strncmp(str, "ENDIF", 5) == 0)		{	return ENDIF;		}
+	else if (strncmp(str, "WHILE", 5) == 0)		{	return WHILE;		}
 	else if (strncmp(str, "REPEAT", 6) == 0)    {	return REPEAT;		}
 	else if (strncmp(str, "ENDWHILE", 8) == 0)  {	return ENDWHILE;	}
 
@@ -73,15 +74,15 @@ const char *enum_to_str(enum kind_e kind)
 	switch (kind)
 	{
 		case LABEL:		return "LABEL";		 break;
-		case GOTO:	 	return "GOTO";		 break;
-		case PRINT:	 	return "PRINT";		 break;
+		case GOTO:		return "GOTO";		 break;
+		case PRINT:		return "PRINT";		 break;
 		case INPUT:		return "INPUT";		 break;
-		case LET:	 	return "LET";		 break;
-		case IF:	 	return "IF";		 break;
-		case THEN:	 	return "THEN";		 break;
-		case ENDIF:	 	return "ENDIF";		 break;
-		case WHILE:	 	return "WHILE";		 break;
-		case REPEAT: 	return "REPEAT";	 break;
+		case LET:		return "LET";		 break;
+		case IF:		return "IF";		 break;
+		case THEN:		return "THEN";		 break;
+		case ENDIF:		return "ENDIF";		 break;
+		case WHILE:		return "WHILE";		 break;
+		case REPEAT:	return "REPEAT";	 break;
 		case ENDWHILE:	return "ENDWHILE";	 break;
 	}
 
@@ -130,7 +131,7 @@ token_t get_token(lexer_t *lx)
 		const char *keyword_str = enum_to_str(keyword);
 		/* if (keyword_str == NULL) */
 		/* { */
-		/* 	lex_abort("Unkown Token: %c value %c\n", tk.value, tk.value); */
+		/*	lex_abort("Unkown Token: %c value %c\n", tk.value, tk.value); */
 		/* } */
 
 		printf("TokenType.%s\n", keyword_str);
@@ -231,8 +232,8 @@ token_t get_token(lexer_t *lx)
 			while (lx->curchar != '\"')
 			{
 				if (lx->curchar == '\r' || lx->curchar == '\n' ||
-				    lx->curchar == '\t' || lx->curchar == '\\' ||
-				    lx->curchar == '%')
+					lx->curchar == '\t' || lx->curchar == '\\' ||
+					lx->curchar == '%')
 				{
 					lex_abort("Illegal character in string.\n");
 				}
@@ -252,10 +253,10 @@ token_t get_token(lexer_t *lx)
 			free(str);
 			break;
 		/* case '\0': */
-		/* 	tk.value = "\0"; */
-		/* 	tk.kind = ENDF; */
-		/* 	printf("TokenType.ENDF\n"); */
-		/* 	break; */
+		/*	tk.value = "\0"; */
+		/*	tk.kind = ENDF; */
+		/*	printf("TokenType.ENDF\n"); */
+		/*	break; */
 	}
 
 	if (isdigit(lx->curchar))
