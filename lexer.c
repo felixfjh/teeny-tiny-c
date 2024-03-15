@@ -73,6 +73,12 @@ const char *enum_to_str(enum kind_e kind)
 {
 	switch (kind)
 	{
+		case ENDF:		return "ENDF";		 break;
+		case NEWLINE:	return "NEWLINE";	 break;
+		case IDENT:		return "IDENT";		 break;
+		case NUMBER:	return "NUMBER";	 break;
+		case STRING:	return "STRING";	 break;
+
 		case LABEL:		return "LABEL";		 break;
 		case GOTO:		return "GOTO";		 break;
 		case PRINT:		return "PRINT";		 break;
@@ -84,9 +90,19 @@ const char *enum_to_str(enum kind_e kind)
 		case WHILE:		return "WHILE";		 break;
 		case REPEAT:	return "REPEAT";	 break;
 		case ENDWHILE:	return "ENDWHILE";	 break;
+		
+		case EQ:		return "EQ";		 break;
+		case PLUS:		return "PLUS";		 break;
+		case MINUS:		return "MINUS";		 break;
+		case ASTK:		return "ASTK";		 break;
+		case SLASH:		return "SLASH";		 break;
+		case EQEQ:		return "EQEQ";		 break;
+		case NOTEQ:		return "NOTEQ";		 break;
+		case LT:		return "LT";		 break;
+		case LTEQ:		return "LTEQ";		 break;
+		case GT:		return "GT";		 break;
+		case GTEQ:		return "GTEQ";		 break;
 	}
-
-	return "IDENT"; 
 }
 
 char peek(lexer_t *lx)
@@ -101,10 +117,15 @@ char peek(lexer_t *lx)
 	}
 }
 
-token_t get_token(lexer_t *lx)
+token_t *get_token(lexer_t *lx)
 {
-	token_t tk;
-	tk.value = NULL;
+	token_t *tk = malloc(sizeof(token_t));
+	if (tk == NULL)
+	{
+		fprintf(stderr, "Couldn't allocate memory for token\n");
+		exit(1);
+	}
+	tk->value = NULL;
 
 	skip_whitespace(lx);
 	skip_comment(lx);
@@ -116,109 +137,91 @@ token_t get_token(lexer_t *lx)
 		{
 			next_char(lx);
 		}
+
 		int len = lx->curpos - start;
 		char *str = malloc(len + 1);
 		if (str == NULL)
 		{
 			lex_abort("Couldn't allocate memory for string.\n");
 		}
+
 		strncpy(str, lx->src + start, len);
 		str[len] = '\0';
 		int keyword = check_keyword(str);
-
-		tk.value = str;
-		tk.kind = keyword;
-		const char *keyword_str = enum_to_str(keyword);
-		/* if (keyword_str == NULL) */
-		/* { */
-		/*	lex_abort("Unkown Token: %c value %c\n", tk.value, tk.value); */
-		/* } */
-
-		printf("TokenType.%s\n", keyword_str);
-
-		/* printf("str: %s\n", str); */
+		tk->value = str;
+		tk->kind = keyword;
 		free(str);
+
+		return tk;
 	}
 
 	switch (lx->curchar)
 	{
 		case '+':
-			tk.value = "+";
-			tk.kind = PLUS;
-			printf("TokenType.PLUS\n");
+			tk->value = "+";
+			tk->kind = PLUS;
 			break;
 		case '-':
-			tk.value = "-";
-			tk.kind = MINUS;
-			printf("TokenType.MINUS\n");
+			tk->value = "-";
+			tk->kind = MINUS;
 			break;
 		case '*':
-			tk.value = "*";
-			tk.kind = ASTK;
-			printf("TokenType.ASTK\n");
+			tk->value = "*";
+			tk->kind = ASTK;
 			break;
 		case '/':
-			tk.value = "/";
-			tk.kind = SLASH;
-			printf("TokenType.SLASH\n");
+			tk->value = "/";
+			tk->kind = SLASH;
 			break;
 		case '\n':
-			tk.value = "\n";
-			tk.kind = NEWLINE;
-			printf("TokenType.NEWLINE\n");
+			tk->value = "\n";
+			tk->kind = NEWLINE;
 			break;
 		case '=':
 			if (peek(lx) == '=')
 			{
 				next_char(lx);
-				tk.value = "==";
-				tk.kind = EQEQ;
-				printf("TokenType.EQEQ\n");
+				tk->value = "==";
+				tk->kind = EQEQ;
 			}
 			else
 			{
-				tk.value = "=";
-				tk.kind = EQ;
-				printf("TokenType.EQ\n");
+				tk->value = "=";
+				tk->kind = EQ;
 			}
 			break;
 		case '>':
 			if (peek(lx) == '=')
 			{
 				next_char(lx);
-				tk.value = ">=";
-				tk.kind = GTEQ;
-				printf("TokenType.GTEQ\n");
+				tk->value = ">=";
+				tk->kind = GTEQ;
 			}
 			else
 			{
-				tk.value = ">";
-				tk.kind = GT;
-				printf("TokenType.GT\n");
+				tk->value = ">";
+				tk->kind = GT;
 			}
 			break;
 		case '<':
 			if (peek(lx) == '=')
 			{
 				next_char(lx);
-				tk.value = "<=";
-				tk.kind = LTEQ;
-				printf("TokenType.LTEQ\n");
+				tk->value = "<=";
+				tk->kind = LTEQ;
 			}
 			else
 			{
-				tk.value = "<";
-				tk.kind = LT;
-				printf("TokenType.LT\n");
+				tk->value = "<";
+				tk->kind = LT;
 			}
 			break;
 		case '!':
 			if (peek(lx) == '=')
 			{
 				next_char(lx);
-				tk.value = "!=";
-				tk.kind = NOTEQ;
-				printf("TokenType.NOTEQ\n");
+				tk->value = "!=";
+				tk->kind = NOTEQ;
 			}
 			else
 			{
@@ -237,8 +240,10 @@ token_t get_token(lexer_t *lx)
 				{
 					lex_abort("Illegal character in string.\n");
 				}
+
 				next_char(lx);
 			}
+
 			int len = lx->curpos - startpos;
 			char *str = malloc(len + 1); // +1 null terminator
 			if (str == NULL)
@@ -247,16 +252,14 @@ token_t get_token(lexer_t *lx)
 			}
 			strncpy(str, lx->src + startpos, len); //lx->src + startpos to go to string
 			str[len] = '\0';
-			tk.value = str;
-			tk.kind = STRING;
-			printf("TokenType.STRING\n");
+			tk->value = str;
+			tk->kind = STRING;
 			free(str);
 			break;
-		/* case '\0': */
-		/*	tk.value = "\0"; */
-		/*	tk.kind = ENDF; */
-		/*	printf("TokenType.ENDF\n"); */
-		/*	break; */
+		case '\0':
+			tk->value = "\0";
+			tk->kind = ENDF;
+			break;
 	}
 
 	if (isdigit(lx->curchar))
@@ -279,28 +282,25 @@ token_t get_token(lexer_t *lx)
 				next_char(lx);
 			}
 		}
+
 		int len = lx->curpos - start;
 		char *str = malloc(len + 1);
+
 		if (str == NULL)
 		{
 			lex_abort("Couldn't allocate memory for string.\n");
 		}
+
 		strncpy(str, lx->src + start, len);
 		str[len] = '\0';
-		tk.value = str;
-		tk.kind = NUMBER;
-		printf("TokenType.NUMBER\n");
+		tk->value = str;
+		tk->kind = NUMBER;
 		free(str);
 	}
 
-	if (lx->curchar == '\0')
+	if (tk->value == NULL)
 	{
-		tk.value = "\0";
-		tk.kind = ENDF;
-	}
-
-	if (tk.value == NULL)
-	{
+		free(tk);
 		lex_abort("Unknown Token: %c value: %i", lx->curchar, lx->curchar);
 	}
 

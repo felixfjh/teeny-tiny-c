@@ -64,6 +64,6 @@ const char *enum_to_str(enum kind_e kind);
 
 char peek(lexer_t *lx);
 
-token_t get_token(lexer_t *lx);
+token_t *get_token(lexer_t *lx);
 
 #endif /* LEXER_H */

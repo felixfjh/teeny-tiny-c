@@ -14,12 +14,15 @@ int main(void)
 	lx.curpos = -1;
 
 	next_char(&lx); // start at 0
-	token_t token = get_token(&lx);
+	token_t *token = get_token(&lx);
 
-	while (token.kind != ENDF)
+	while (token->kind != ENDF)
 	{
+
+		printf("TokenType.%s\n", enum_to_str(token->kind));
+		free(token);
 		token = get_token(&lx);
 	}
-
+	free(token); // free the ENDF token
 	return 0;
 }
