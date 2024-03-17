@@ -48,7 +48,7 @@ typedef struct
 
 typedef struct
 {
-	const char *value;
+	char *value;
 	enum kind_e kind;
 
 } token_t;

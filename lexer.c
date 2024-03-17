@@ -130,31 +130,6 @@ token_t *get_token(lexer_t *lx)
 	skip_whitespace(lx);
 	skip_comment(lx);
 
-	if (isalpha(lx->curchar))
-	{
-		int start = lx->curpos;
-		while (isalnum(lx->curchar))
-		{
-			next_char(lx);
-		}
-
-		int len = lx->curpos - start;
-		char *str = malloc(len + 1);
-		if (str == NULL)
-		{
-			lex_abort("Couldn't allocate memory for string.\n");
-		}
-
-		strncpy(str, lx->src + start, len);
-		str[len] = '\0';
-		int keyword = check_keyword(str);
-		tk->value = str;
-		tk->kind = keyword;
-		free(str);
-
-		return tk;
-	}
-
 	switch (lx->curchar)
 	{
 		case '+':
@@ -254,48 +229,71 @@ token_t *get_token(lexer_t *lx)
 			str[len] = '\0';
 			tk->value = str;
 			tk->kind = STRING;
-			free(str);
 			break;
 		case '\0':
 			tk->value = "\0";
 			tk->kind = ENDF;
 			break;
-	}
-
-	if (isdigit(lx->curchar))
-	{
-		int start = lx->curpos;
-		while (isdigit(peek(lx)))
-		{
-			next_char(lx);
-		}
-		if (peek(lx) == '.')
-		{
-			//check after decimal
-			next_char(lx);
-			if (!isdigit(peek(lx)))
+		default:
+			if (isalpha(lx->curchar))
 			{
-				lex_abort("Illegeal character in number.\n");
-			}
-			while (isdigit(peek(lx)))
-			{
-				next_char(lx);
-			}
-		}
+				int start = lx->curpos;
+				while (isalnum(lx->curchar))
+				{
+					next_char(lx);
+				}
 
-		int len = lx->curpos - start;
-		char *str = malloc(len + 1);
+				int len = lx->curpos - start;
+				char *str = malloc(len + 1);
+				if (str == NULL)
+				{
+					lex_abort("Couldn't allocate memory for string.\n");
+				}
+				strncpy(str, lx->src + start, len);
 
-		if (str == NULL)
-		{
-			lex_abort("Couldn't allocate memory for string.\n");
-		}
+				int keyword = check_keyword(str);
 
-		strncpy(str, lx->src + start, len);
-		str[len] = '\0';
-		tk->value = str;
-		tk->kind = NUMBER;
-		free(str);
+				tk->value = str;
+				tk->kind = keyword;
+
+				return tk;
+		 }
+
+		 if (isdigit(lx->curchar))
+		 {
+			 int start = lx->curpos;
+			 while (isdigit(lx->curchar))
+			 {
+				 next_char(lx);
+			 	if (peek(lx) == '.')
+			 	{
+				 	next_char(lx);
+				 	if (!isdigit(peek(lx)))
+				 	{
+					 	lex_abort("Illegal character in number.\n");
+				 	}
+				 	while (isdigit(peek(lx)))
+				 	{
+					 	next_char(lx);
+				 	}
+			 	}
+			 }
+
+			 int len = lx->curpos - start;
+			 char *str = malloc(len + 1);
+
+			 if (str == NULL)
+			 {
+				 lex_abort("Couldn't allocate memory for string.\n");
+			 }
+
+			 strncpy(str, lx->src + start, len);
+			 str[len] = '\0';
+			 tk->value = str;
+			 tk->kind = NUMBER;
+			 return tk;
+		 }
+		 break;
 	}
 
 	if (tk->value == NULL)
