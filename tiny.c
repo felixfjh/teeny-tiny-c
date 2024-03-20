@@ -5,6 +5,7 @@
 #include <ctype.h>
 
 #include "lexer.h"
+#include "praser.h"
 
 #define SIZE 1024
 
@@ -32,25 +33,22 @@ int main(int argc, char *argv[])
 		return 1;
 	}
 
-	lexer_t lx;
-	lx.src = buffer;
-	lx.curpos = -1;
+	lexer_t *lx = malloc(sizeof(lexer_t));
+	lx->src = buffer;
+	lx->curpos = -1;
 
-	next_char(&lx); // start at 0
-	token_t *token = get_token(&lx);
+	next_char(lx); // start at 0
 
-	while (token->kind != ENDF)
-	{
-		/* printf("TokenValue.%s\n", token->value); */
-		printf("TokenType.%s\n", enum_to_str(token->kind));
-		if (token->kind >= 101 && token->kind <= 111 || token->kind == 1
-				|| token->kind == 2 || token->kind == 3)
-		{
-			free(token->value);
-		}
-		free(token);
-		token = get_token(&lx);
-	}
-	free(token); // free the ENDF token
+	praser_t *ps = malloc(sizeof(praser_t));
+	ps->lexer = lx;
+	ps->curtoken = get_token(lx);
+	ps->peektoken = get_token(lx);
+
+	program(ps);
+
+	printf("Prasing Completed!\n");
+
+	free(lx);
+	free(ps);
 	return 0;
 }

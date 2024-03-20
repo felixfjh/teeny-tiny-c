@@ -1,7 +1,6 @@
 #ifndef LEXER_H
 #define LEXER_H
 
-
 enum kind_e
 {
 	ENDF = -1,

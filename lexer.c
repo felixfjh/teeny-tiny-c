@@ -12,9 +12,7 @@ void lex_abort(const char *msg, ...)
 	va_start(args, msg);
 	vfprintf(stderr, "Lexing error. ", NULL);
 	vfprintf(stderr, msg, args);
-	fprintf(stderr, "\n");
 	va_end(args);
-	exit(1);
 }
 
 void next_char(lexer_t *lx)
@@ -122,7 +120,7 @@ token_t *get_token(lexer_t *lx)
 	token_t *tk = malloc(sizeof(token_t));
 	if (tk == NULL)
 	{
-		fprintf(stderr, "Couldn't allocate memory for token\n");
+		fprintf(stderr, "Couldn't allocate memory for token.\n");
 		exit(1);
 	}
 	tk->value = NULL;
@@ -201,6 +199,7 @@ token_t *get_token(lexer_t *lx)
 			else
 			{
 				lex_abort("Expected !=, not !%c\n", peek(lx));
+				exit(1);
 			}
 			break;
 		case '\"':
@@ -214,6 +213,7 @@ token_t *get_token(lexer_t *lx)
 					lx->curchar == '%')
 				{
 					lex_abort("Illegal character in string.\n");
+					exit(1);
 				}
 
 				next_char(lx);
@@ -224,6 +224,7 @@ token_t *get_token(lexer_t *lx)
 			if (str == NULL)
 			{
 				lex_abort("Couldn't allocate memory for string.\n");
+				exit(1);
 			}
 			strncpy(str, lx->src + startpos, len); //lx->src + startpos to go to string
 			str[len] = '\0';
@@ -248,6 +249,7 @@ token_t *get_token(lexer_t *lx)
 				if (str == NULL)
 				{
 					lex_abort("Couldn't allocate memory for string.\n");
+					exit(1);
 				}
 				strncpy(str, lx->src + start, len);
 
@@ -271,6 +273,7 @@ token_t *get_token(lexer_t *lx)
 				 	if (!isdigit(peek(lx)))
 				 	{
 					 	lex_abort("Illegal character in number.\n");
+						exit(1);
 				 	}
 				 	while (isdigit(peek(lx)))
 				 	{
@@ -285,6 +288,7 @@ token_t *get_token(lexer_t *lx)
 			 if (str == NULL)
 			 {
 				 lex_abort("Couldn't allocate memory for string.\n");
+				 exit(1);
 			 }
 
 			 strncpy(str, lx->src + start, len);
@@ -300,6 +304,7 @@ token_t *get_token(lexer_t *lx)
 	{
 		free(tk);
 		lex_abort("Unknown Token: %c value: %i", lx->curchar, lx->curchar);
+		exit(1);
 	}
 
 	next_char(lx);
