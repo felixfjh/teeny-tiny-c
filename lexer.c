@@ -6,13 +6,64 @@
 
 #include "lexer.h"
 
-void lex_abort(const char *msg, ...)
+void lex_abort(state_t *state, const char *msg, ...)
 {
 	va_list args;
 	va_start(args, msg);
 	vfprintf(stderr, "Lexing error. ", NULL);
 	vfprintf(stderr, msg, args);
 	va_end(args);
+
+	parser_t *ps = state->parser;
+	lexer_t *lx = state->lexer;
+
+	if (state != NULL)
+	{
+		if (ps->curtoken != NULL)
+		{
+			if (ps->curtoken->value != NULL &&
+				is_keyword(ps->curtoken->kind) ||
+			   	is_nis(ps->curtoken->kind))
+			{
+				free(ps->curtoken->value);
+				printf("ps->curtoken->value freed!\n");
+			}
+			free(ps->curtoken);
+			printf("ps->curtoken freed!\n");
+		}
+		
+		/* ps->curtoken pointed to peektoken so don't have to */
+		/* include this part */
+		/* if (ps->peektoken != NULL) */
+		/* { */
+		/* 	if (ps->peektoken->value != NULL && */ 
+		/* 		is_keyword(ps->peektoken->kind) || */
+		/* 		is_nis(ps->peektoken->kind)) */
+		/* 	{ */
+		/* 		printf("peek value isn't NULL\n"); */
+		/* 		free(ps->peektoken->value); */
+		/* 		printf("ps->peektoken->value freed!\n"); */
+		/* 	} */
+		/* 	free(ps->peektoken); */
+		/* 	printf("ps->peektoken freed!\n"); */
+		/* } */
+
+		if (ps != NULL)
+		{
+			free(ps);
+			printf("ps freed!\n");
+		}
+
+		if (lx != NULL)
+		{
+			free(lx);
+			printf("lx freed!\n");
+		}
+
+		free(state);
+		printf("state freed!\n");
+	}
+	exit(1);
 }
 
 void next_char(lexer_t *lx)
@@ -67,42 +118,6 @@ enum kind_e check_keyword(const char *str)
 	return IDENT;
 }
 
-const char *enum_to_str(enum kind_e kind)
-{
-	switch (kind)
-	{
-		case ENDF:		return "ENDF";		 break;
-		case NEWLINE:	return "NEWLINE";	 break;
-		case IDENT:		return "IDENT";		 break;
-		case NUMBER:	return "NUMBER";	 break;
-		case STRING:	return "STRING";	 break;
-
-		case LABEL:		return "LABEL";		 break;
-		case GOTO:		return "GOTO";		 break;
-		case PRINT:		return "PRINT";		 break;
-		case INPUT:		return "INPUT";		 break;
-		case LET:		return "LET";		 break;
-		case IF:		return "IF";		 break;
-		case THEN:		return "THEN";		 break;
-		case ENDIF:		return "ENDIF";		 break;
-		case WHILE:		return "WHILE";		 break;
-		case REPEAT:	return "REPEAT";	 break;
-		case ENDWHILE:	return "ENDWHILE";	 break;
-		
-		case EQ:		return "EQ";		 break;
-		case PLUS:		return "PLUS";		 break;
-		case MINUS:		return "MINUS";		 break;
-		case ASTK:		return "ASTK";		 break;
-		case SLASH:		return "SLASH";		 break;
-		case EQEQ:		return "EQEQ";		 break;
-		case NOTEQ:		return "NOTEQ";		 break;
-		case LT:		return "LT";		 break;
-		case LTEQ:		return "LTEQ";		 break;
-		case GT:		return "GT";		 break;
-		case GTEQ:		return "GTEQ";		 break;
-	}
-}
-
 char peek(lexer_t *lx)
 {
 	if (lx->curpos + 1 >= strlen(lx->src))
@@ -115,13 +130,13 @@ char peek(lexer_t *lx)
 	}
 }
 
-token_t *get_token(lexer_t *lx)
+token_t *get_token(state_t *state)
 {
 	token_t *tk = malloc(sizeof(token_t));
+	lexer_t *lx = state->lexer;
 	if (tk == NULL)
 	{
-		fprintf(stderr, "Couldn't allocate memory for token.\n");
-		exit(1);
+		lex_abort(state, "Couldn't allocate memory for token.\n");
 	}
 	tk->value = NULL;
 
@@ -198,8 +213,7 @@ token_t *get_token(lexer_t *lx)
 			}
 			else
 			{
-				lex_abort("Expected !=, not !%c\n", peek(lx));
-				exit(1);
+				lex_abort(state, "Expected !=, not !%c\n", peek(lx));
 			}
 			break;
 		case '\"':
@@ -212,8 +226,7 @@ token_t *get_token(lexer_t *lx)
 					lx->curchar == '\t' || lx->curchar == '\\' ||
 					lx->curchar == '%')
 				{
-					lex_abort("Illegal character in string.\n");
-					exit(1);
+					lex_abort(state, "Illegal character in string.\n");
 				}
 
 				next_char(lx);
@@ -223,8 +236,7 @@ token_t *get_token(lexer_t *lx)
 			char *str = malloc(len + 1); // +1 null terminator
 			if (str == NULL)
 			{
-				lex_abort("Couldn't allocate memory for string.\n");
-				exit(1);
+				lex_abort(state, "Couldn't allocate memory for string.\n");
 			}
 			strncpy(str, lx->src + startpos, len); //lx->src + startpos to go to string
 			str[len] = '\0';
@@ -248,8 +260,7 @@ token_t *get_token(lexer_t *lx)
 				char *str = malloc(len + 1);
 				if (str == NULL)
 				{
-					lex_abort("Couldn't allocate memory for string.\n");
-					exit(1);
+					lex_abort(state, "Couldn't allocate memory for string.\n");
 				}
 				strncpy(str, lx->src + start, len);
 
@@ -267,19 +278,19 @@ token_t *get_token(lexer_t *lx)
 			 while (isdigit(lx->curchar))
 			 {
 				 next_char(lx);
-			 	if (peek(lx) == '.')
-			 	{
-				 	next_char(lx);
-				 	if (!isdigit(peek(lx)))
-				 	{
-					 	lex_abort("Illegal character in number.\n");
-						exit(1);
-				 	}
-				 	while (isdigit(peek(lx)))
-				 	{
-					 	next_char(lx);
-				 	}
-			 	}
+			 }
+
+			 if (lx->curchar == '.')
+			 {
+				 if (!isdigit(peek(lx)))
+				 {
+					 lex_abort(state, "Illegal character in number.\n");
+				 }
+				 next_char(lx);
+				 while (isdigit(lx->curchar))
+				 {
+					 next_char(lx);
+				 }
 			 }
 
 			 int len = lx->curpos - start;
@@ -287,8 +298,7 @@ token_t *get_token(lexer_t *lx)
 
 			 if (str == NULL)
 			 {
-				 lex_abort("Couldn't allocate memory for string.\n");
-				 exit(1);
+				 lex_abort(state, "Couldn't allocate memory for string.\n");
 			 }
 
 			 strncpy(str, lx->src + start, len);
@@ -297,14 +307,13 @@ token_t *get_token(lexer_t *lx)
 			 tk->kind = NUMBER;
 			 return tk;
 		 }
+
 		 break;
 	}
 
 	if (tk->value == NULL)
 	{
-		free(tk);
-		lex_abort("Unknown Token: %c value: %i", lx->curchar, lx->curchar);
-		exit(1);
+		lex_abort(state, "Unknown Token: %c value: %i\n", lx->curchar, lx->curchar);
 	}
 
 	next_char(lx);

@@ -4,8 +4,8 @@
 #include <string.h>
 #include <ctype.h>
 
+#include "parser.h"
 #include "lexer.h"
-#include "praser.h"
 
 #define SIZE 1024
 
@@ -37,18 +37,18 @@ int main(int argc, char *argv[])
 	lx->src = buffer;
 	lx->curpos = -1;
 
-	next_char(lx); // start at 0
+	next_char(lx);
 
-	praser_t *ps = malloc(sizeof(praser_t));
-	ps->lexer = lx;
-	ps->curtoken = get_token(lx);
-	ps->peektoken = get_token(lx);
+	parser_t *ps = malloc(sizeof(parser_t));
 
-	program(ps);
+	state_t *state = malloc(sizeof(state_t));
+	state->lexer = lx;
+	state->parser = ps;
 
-	printf("Prasing Completed!\n");
+	ps->curtoken = get_token(state);
+	ps->peektoken = get_token(state);
 
-	free(lx);
-	free(ps);
+	program(state);
+
 	return 0;
 }
