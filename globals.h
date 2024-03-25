@@ -1,6 +1,8 @@
 #ifndef GLOBALS_H
 #define GLOBALS_H
 
+#include "utils.h"
+
 enum kind_e
 {
 	ENDF = -1,
@@ -63,6 +65,10 @@ typedef struct
 {
 	lexer_t *lexer;
 	parser_t *parser;
+
+	set_t *symbols;
+	set_t *labels;
+	set_t *gotoed;
 
 } state_t;
 

@@ -1,10 +1,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdarg.h>
+#include <string.h>
 
 #include "parser.h"
-
-//TODO handle string in print statement
 
 void parser_abort(state_t *state, const char *msg, ...)
 {
@@ -44,6 +43,10 @@ void parser_abort(state_t *state, const char *msg, ...)
 			free(ps->peektoken);
 			printf("ps->peektoken freed!\n");
 		}
+
+		free_set(state->symbols);
+		free_set(state->labels);
+		free_set(state->gotoed);
 
 		if (ps != NULL)
 		{
@@ -122,9 +125,14 @@ void program(state_t *state)
 		statement(state);
 	}
 
+	check_goto(state);
+
 	printf("Parsing Completed!\n");
 	free(state->parser->curtoken);
 	free(state->parser->peektoken);
+	free_set(state->symbols);
+	free_set(state->labels);
+	free_set(state->gotoed);
 	free(state->parser);
 	free(state->lexer);
 	free(state);
@@ -201,6 +209,24 @@ void statement(state_t *state)
 		free(ps->curtoken);
 
 		next_token(state);
+
+		int found = 0;
+		for (size_t i = 0; i < state->labels->length; i++)
+		{
+			if (strncmp(state->labels->members[i], ps->curtoken->value,
+					strlen(ps->curtoken->value)) == 0)
+			{
+				found = 1;
+				break;
+			}
+		}
+
+		if (found)
+		{
+			parser_abort(state, "Label already exists: %s\n", ps->curtoken->value);
+		}
+
+		insert(state->labels, ps->curtoken->value);
 		match(state, IDENT);
 	}
 
@@ -212,6 +238,7 @@ void statement(state_t *state)
 		free(ps->curtoken);
 
 		next_token(state);
+		insert(state->gotoed, ps->curtoken->value);
 		match(state, IDENT);
 	}
 
@@ -223,6 +250,22 @@ void statement(state_t *state)
 		free(ps->curtoken);
 
 		next_token(state);
+
+		int found = 0;
+		for (size_t i = 0; i < state->symbols->length; i++)
+		{
+			if (strncmp(state->symbols->members[i], ps->curtoken->value,
+				strlen(ps->curtoken->value)) == 0)
+			{
+				found = 1;
+				break;
+			}
+		}
+		if (!found)
+		{
+			insert(state->symbols, ps->curtoken->value);
+		}
+
 		match(state, IDENT);
 		match(state, EQ);
 		expression(state);
@@ -236,6 +279,23 @@ void statement(state_t *state)
 		free(ps->curtoken);
 
 		next_token(state);
+
+		int found = 0;
+		for (size_t i = 0; i < state->symbols->length; i++)
+		{
+			if (strncmp(state->symbols->members[i], ps->curtoken->value,
+				strlen(ps->curtoken->value)) == 0)
+			{
+				found = 1;
+				break;
+			}
+		}
+
+		if (!found)
+		{
+			insert(state->symbols, ps->curtoken->value);
+		}
+
 		match(state, IDENT);
 	}
 	else
@@ -256,6 +316,28 @@ void newline(state_t *state)
 	{
 		free(state->parser->curtoken);
 		next_token(state);
+	}
+}
+
+void check_goto(state_t *state)
+{
+	int found = 0;
+	for (size_t i = 0; i < state->gotoed->length; i++)
+	{
+		for (size_t j = 0; j < state->labels->length; j++)
+		{
+			if (strncmp(state->gotoed->members[i], state->labels->members[j],
+				strlen(state->labels->members[i])) == 0)
+			{
+				found = 1;
+				break;
+			}
+		}
+		if (!found)
+		{
+			parser_abort(state, "Attempting to GOTO to undeclared label: %s\n",
+				state->gotoed->members[i]);
+		}
 	}
 }
 
@@ -334,6 +416,7 @@ void unary(state_t *state)
 void primary(state_t *state)
 {
 	printf("PRIMARY ( %s )\n", state->parser->curtoken->value);
+
 	if (check_token(state->parser, NUMBER))
 	{
 		free(state->parser->curtoken->value);
@@ -343,6 +426,23 @@ void primary(state_t *state)
 	}
 	else if (check_token(state->parser, IDENT))
 	{
+		int found = 0;
+		for (size_t i = 0; i < state->symbols->length; i++)
+		{
+			if (strncmp(state->symbols->members[i], state->parser->curtoken->value,
+				strlen(state->parser->curtoken->value)) == 0)
+			{
+				found = 1;
+				break;
+			}
+		}
+
+		if (!found)
+		{
+			parser_abort(state, "Referencing variable before assignment: %s\n",
+				state->parser->curtoken->value);
+		}
+
 		free(state->parser->curtoken->value);
 		free(state->parser->curtoken);
 

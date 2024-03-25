@@ -15,6 +15,8 @@ void program(state_t *state);
 void statement(state_t *state);
 void newline(state_t *state);
 
+void check_goto(state_t *state);
+
 void expression(state_t *state);
 void comparison(state_t *state);
 void term(state_t *state);
