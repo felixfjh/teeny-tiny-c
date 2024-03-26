@@ -1,17 +1,17 @@
 CC = clang
 
-# CFLAGS += -Wall
-# CFLAGS += -Werror
-# CFLAGS += -Wextra
+CFLAGS += -Wall
+CFLAGS += -Werror
+CFLAGS += -Wextra
 
-SRC = *.c
-INC = -I*.h
+SRC = src/*.c
+INC = -Isrc/*.h
 
 BIN = tiny
 OUT = -o $(BIN)
 
 all:
-	$(CC) $(CFLAGS) $(SRC) $(INC) $(OUT)  
+	$(CC) $(CFLAGS) $(SRC) $(INC) $(OUT)
 
 clean:
 	rm $(BIN)
